@@ -18,9 +18,6 @@ spec:
     type: RollingUpdate
   template:
     metadata:
-      annotations:
-        traffic.sidecar.istio.io/excludeInboundPorts: "9000"
-        traffic.sidecar.istio.io/excludeOutboundPorts: "2552,8558"
       labels:
         app: hello
     spec:
