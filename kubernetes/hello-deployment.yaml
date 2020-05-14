@@ -7,7 +7,7 @@ metadata:
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
   name: hello
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: hello
@@ -33,10 +33,20 @@ spec:
             httpGet:
               path: /alive
               port: 8558
+            initialDelaySeconds: 120
+            timeoutSeconds: 3
+            periodSeconds: 30
+            successThreshold: 1
+            failureThreshold: 5
           readinessProbe:
             httpGet:
               path: /ready
               port: 8558
+            initialDelaySeconds: 120
+            timeoutSeconds: 3
+            periodSeconds: 30
+            successThreshold: 1
+            failureThreshold: 5
           ports:
             - containerPort: 9000
               name: "http"
@@ -64,18 +74,8 @@ spec:
                 secretKeyRef:
                   name: hello-application-secret
                   key: secret
-            - name: CASSANDRA_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: db-secret
-                  key: username
-            - name: CASSANDRA_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: db-secret
-                  key: password
             - name: REQUIRED_CONTACT_POINT_NR
-              value: "3"
+              value: "1"
 ---
 apiVersion: v1
 kind: Service
