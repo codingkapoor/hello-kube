@@ -82,3 +82,9 @@ The steps to follow for deploying this project in kubernetes are:
   $ minikube addons enable ingress
   $ kubectl apply -f kubernetes/ingress-service.yaml
   ```
+- Fetch minikube cluster address
+```
+$ minikube ip
+$ curl -H "Content-Type: application/json" -X POST -d '{"message": "Hola"}' http://192.168.99.101/api/hello/Alice
+$ curl -H "Content-Type: application/json" -X GET http://192.168.99.101/api/hello/Alice
+```
