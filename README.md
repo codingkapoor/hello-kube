@@ -82,9 +82,22 @@ The steps to follow for deploying this project in kubernetes are:
   $ minikube addons enable ingress
   $ kubectl apply -f kubernetes/ingress-service.yaml
   ```
-- Fetch minikube cluster address
-```
-$ minikube ip
-$ curl -H "Content-Type: application/json" -X POST -d '{"message": "Hola"}' http://192.168.99.101/api/hello/Alice
-$ curl -H "Content-Type: application/json" -X GET http://192.168.99.101/api/hello/Alice
-```
+- Fetch minikube cluster address and access APIs
+  ```
+  $ minikube ip
+  $ curl -H "Content-Type: application/json" -X POST -d '{"message": "Hola"}' http://192.168.99.101/api/hello/Alice
+  $ curl -H "Content-Type: application/json" -X GET http://192.168.99.101/api/hello/Alice
+  ```
+- Verify the APIs 
+  - Cass
+  ```
+  $ cqlsh> use hello
+  $ cqlsh> select * from messages;
+  ```
+
+  - Kafka
+  ```
+  $ kubectl -n kafka run kafka-consumer -ti --image=strimzi/kafka:0.17.0-kafka-2.4.0 --rm=true --restart=Never -- bin/kafka-console-consumer.sh --bootstrap-server strimzi-kafka-bootstrap:9092 --topic greetings --from-beginning
+  If you don't see a command prompt, try pressing enter.
+  {"name":"Alice","message":"Hola"}
+  ```
