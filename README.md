@@ -49,6 +49,23 @@ The steps to follow for deploying this project in kubernetes are:
   The TCP name could be fetched from the service broker definition:
   ```
   $ kubectl -n kafka get service strimzi-kafka-brokers -o yaml
+  
+  spec:
+  clusterIP: None
+  ports:
+  - name: tcp-replication
+    port: 9091
+    protocol: TCP
+    targetPort: 9091
+  - name: tcp-clients
+    port: 9092
+    protocol: TCP
+    targetPort: 9092
+  - name: tcp-clientstls
+    port: 9093
+    protocol: TCP
+    targetPort: 9093
+
   ```
 - Verify if the kafka cluster is accessible to both producers and consumer
   ```
