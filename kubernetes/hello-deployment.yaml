@@ -7,7 +7,7 @@ metadata:
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
   name: hello
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: hello
@@ -18,9 +18,6 @@ spec:
     type: RollingUpdate
   template:
     metadata:
-      annotations:
-        traffic.sidecar.istio.io/excludeInboundPorts: "9000"
-        traffic.sidecar.istio.io/excludeOutboundPorts: "2552,8558"
       labels:
         app: hello
     spec:
@@ -33,10 +30,20 @@ spec:
             httpGet:
               path: /alive
               port: 8558
+            initialDelaySeconds: 120
+            timeoutSeconds: 3
+            periodSeconds: 30
+            successThreshold: 1
+            failureThreshold: 5
           readinessProbe:
             httpGet:
               path: /ready
               port: 8558
+            initialDelaySeconds: 120
+            timeoutSeconds: 3
+            periodSeconds: 30
+            successThreshold: 1
+            failureThreshold: 5
           ports:
             - containerPort: 9000
               name: "http"
@@ -58,33 +65,24 @@ spec:
             - name: CASSANDRA_SERVICE_NAME
               value: "_cql._tcp.cassandra.default.svc.cluster.local"
             - name: KAFKA_SERVICE_NAME
-              value: "_broker._tcp.kafka.default.svc.cluster.local"
+              value: "_tcp-clients._tcp.strimzi-kafka-brokers.kafka.svc.cluster.local"
             - name: APPLICATION_SECRET
               valueFrom:
                 secretKeyRef:
                   name: hello-application-secret
                   key: secret
-            - name: CASSANDRA_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: db-secret
-                  key: username
-            - name: CASSANDRA_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: db-secret
-                  key: password
             - name: REQUIRED_CONTACT_POINT_NR
-              value: "3"
+              value: "1"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: hello
+  name: hello-cluster-ip-service
 spec:
-  ports:
-    - name: http
-      port: 80
-      targetPort: 9000
+  type: ClusterIP
   selector:
     app: hello
+  ports:
+      - name: http
+        port: 80
+        targetPort: 9000
