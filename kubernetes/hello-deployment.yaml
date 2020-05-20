@@ -65,7 +65,7 @@ spec:
             - name: CASSANDRA_SERVICE_NAME
               value: "_cql._tcp.cassandra.default.svc.cluster.local"
             - name: KAFKA_SERVICE_NAME
-              value: "_tcp-clients._tcp.strimzi-kafka-brokers.kafka.svc.cluster.local"
+              value: "_broker._tcp.kafka.default.svc.cluster.local"
             - name: APPLICATION_SECRET
               valueFrom:
                 secretKeyRef:
