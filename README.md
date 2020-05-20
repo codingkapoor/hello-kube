@@ -31,47 +31,17 @@ The steps to follow for deploying this project in kubernetes are:
   ```
   $ minikube ssh "route -n | grep ^0.0.0.0 | awk '{ print \$2 }'"
   ```
-- Change the IP for Cassandra services and deploy them
+- Change the IP for Cassandra and Kafka services and deploy them
   ```
   $ kubectl apply -f kubernetes/cassandra-service.yaml
+  $ kubectl apply -f kubernetes/kafka-service.yaml
   ```
-- Create a new namespace for strimzi kafka cluster, install strimzi operator and create strimzi kafka cluster
+  **Note:** Since producer kafka client is on the very same network as the brokers, we need to configure an additional listener like so:
   ```
-  $ kubectl create namespace kafka
-  $ kubectl apply -f 'https://strimzi.io/install/latest?namespace=kafka' -n kafka
-  $ kubectl apply -f kubernetes/kafka-service.yaml -n kafka 
-  ```
-- Use following SRV in hello service deployment config
-  ```
-  - name: KAFKA_SERVICE_NAME
-    value: "_tcp-clients._tcp.strimzi-kafka-brokers.kafka.svc.cluster.local"
-  ```
-  The TCP name could be fetched from the service broker definition:
-  ```
-  $ kubectl -n kafka get service strimzi-kafka-brokers -o yaml
-  
-  spec:
-  clusterIP: None
-  ports:
-  - name: tcp-replication
-    port: 9091
-    protocol: TCP
-    targetPort: 9091
-  - name: tcp-clients
-    port: 9092
-    protocol: TCP
-    targetPort: 9092
-  - name: tcp-clientstls
-    port: 9093
-    protocol: TCP
-    targetPort: 9093
-
-  ```
-- Verify if the kafka cluster is accessible to both producers and consumer
-  ```
-  $ kubectl -n kafka run kafka-producer -ti --image=strimzi/kafka:0.17.0-kafka-2.4.0 --rm=true --restart=Never -- bin/kafka-console-producer.sh --broker-list my-cluster-kafka-bootstrap:9092 --topic my-topic
-  $ kubectl -n kafka run kafka-consumer -ti --image=strimzi/kafka:0.17.0-kafka-2.4.0 --rm=true --restart=Never -- bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic my-topic --from-beginning
-  $ kubectl -n kafka exec -ti strimzi-kafka-0 -- bin/kafka-topics.sh --zookeeper localhost:2181 --list
+  listeners=INTERNAL://0.0.0.0:9093,EXTERNAL://0.0.0.0:9092
+  listener.security.protocol.map=INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+  advertised.listeners=INTERNAL://localhost:9093,EXTERNAL://10.0.2.2:9092
+  inter.broker.listener.name=INTERNAL
   ```
 - Deploy the microservice.<br>
   ```
@@ -86,7 +56,7 @@ The steps to follow for deploying this project in kubernetes are:
   ```
   $ minikube ip
   $ curl -H "Content-Type: application/json" -X POST -d '{"message": "Hola"}' http://192.168.99.101/api/hello/Alice
-  $ curl -H "Content-Type: application/json" -X GET http://192.168.99.101/api/hello/Alice
+  $ curl -X GET http://192.168.99.101/api/hello/Alice
   ```
 - Verify the APIs 
   - Cass
@@ -97,7 +67,6 @@ The steps to follow for deploying this project in kubernetes are:
 
   - Kafka
   ```
-  $ kubectl -n kafka run kafka-consumer -ti --image=strimzi/kafka:0.17.0-kafka-2.4.0 --rm=true --restart=Never -- bin/kafka-console-consumer.sh --bootstrap-server strimzi-kafka-bootstrap:9092 --topic greetings --from-beginning
-  If you don't see a command prompt, try pressing enter.
-  {"name":"Alice","message":"Hola"}
+  $ kafka-console-consumer.sh --bootstrap-server INTERNAL://0.0.0.0:9093 --topic greetings --from-beginning
+  {"name":"Alice","message":"Namastey"}
   ```
